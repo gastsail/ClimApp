@@ -1,18 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".ui.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/tvCurrentCity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cordoba"
+            android:fontFamily="@font/montserrat_bold"
+            android:textSize="18sp"
+            />
+
+        <TextView
+            android:id="@+id/tvCurrentDayName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="lunes"
+            android:layout_below="@id/tvCurrentCity"
+            android:fontFamily="@font/montserrat_regular"
+            android:textSize="16sp" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/tvCurrentDayName"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/imgViewCurrentWeatherIcon"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_centerVertical="true"
+                android:src="@mipmap/sun" />
+
+            <RelativeLayout
+               android:layout_width="wrap_content"
+               android:layout_height="match_parent"
+               android:gravity="center"
+               android:padding="16dp"
+               android:layout_toEndOf="@id/imgViewCurrentWeatherIcon">
+
+               <TextView
+                    android:id="@+id/tvCurrentWeatherTemperature"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="12°"
+                    android:fontFamily="@font/montserrat_bold"
+                    android:textSize="36sp"
+                    />
+
+                <TextView
+                    android:id="@+id/tvCurrentWeatherSummary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="soleado"
+                    android:layout_below="@id/tvCurrentWeatherTemperature"
+                    android:fontFamily="@font/montserrat_regular"
+                    android:textSize="18sp"
+                    />
+
+            </RelativeLayout>
+
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2">
+
+        <TextView
+            android:id="@+id/tvExtendedForecast"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:text="Pronostico extendido"
+            android:fontFamily="@font/montserrat_bold"
+            android:background="@color/colorGray200"
+            android:textSize="18sp"
+            android:padding="16dp"
+            />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvExtendedForecast"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/tvExtendedForecast"
+            />
+
+    </RelativeLayout>
+
+</LinearLayout>

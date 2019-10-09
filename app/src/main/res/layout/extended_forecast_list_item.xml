@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <RelativeLayout android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/imgViewExtendedForecastWeatherIcon"
+            android:layout_width="30dp"
+            android:layout_height="match_parent"
+            android:src="@mipmap/sun"
+            />
+
+        <TextView
+            android:id="@+id/tvExtendedForecastDayName"
+            android:layout_marginStart="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@id/imgViewExtendedForecastWeatherIcon"
+            android:text="lunes"
+            android:fontFamily="@font/montserrat_bold"
+            android:gravity="center"
+            />
+
+        <TextView
+            android:id="@+id/tvExtendedForecastMinTemperature"
+            android:layout_marginStart="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@id/tvExtendedForecastDayName"
+            android:text="12°"
+            android:fontFamily="@font/montserrat_regular"
+            android:textColor="@color/colorLightBlue500"
+            android:gravity="center"
+            />
+
+        <TextView
+            android:id="@+id/tvExtendedForecastMaxTemperature"
+            android:layout_marginStart="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@id/tvExtendedForecastMinTemperature"
+            android:textColor="@color/colorRed500"
+            android:fontFamily="@font/montserrat_regular"
+            android:text="24°"
+            android:gravity="center"
+            />
+
+    </RelativeLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_gravity="bottom"
+        android:layout_height="1dp"
+        android:background="@color/colorGray400" />
+
+</FrameLayout>
