@@ -4,13 +4,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:gravity="center"
     tools:context=".ui.MainActivity">
 
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:layout_gravity="center" />
+
+    <TextView
+        android:id="@+id/tvDatosClima"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cargando datos del clima..."/>
+
     <RelativeLayout
+        android:id="@+id/relativeClima"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/tvCurrentCity"
@@ -18,8 +35,7 @@
             android:layout_height="wrap_content"
             android:text="Cordoba"
             android:fontFamily="@font/montserrat_bold"
-            android:textSize="18sp"
-            />
+            android:textSize="18sp" />
 
         <TextView
             android:id="@+id/tvCurrentDayName"
@@ -60,11 +76,18 @@
                     />
 
                 <TextView
+                    android:id="@+id/tvMaxAndMin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/tvCurrentWeatherTemperature"
+                    android:text="max: 23 min: 18"/>
+
+                <TextView
                     android:id="@+id/tvCurrentWeatherSummary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="soleado"
-                    android:layout_below="@id/tvCurrentWeatherTemperature"
+                    android:layout_below="@id/tvMaxAndMin"
                     android:fontFamily="@font/montserrat_regular"
                     android:textSize="18sp"
                     />
@@ -76,9 +99,11 @@
     </RelativeLayout>
 
     <RelativeLayout
+        android:id="@+id/relativeRecycler"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="2">
+        android:layout_weight="2"
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/tvExtendedForecast"
