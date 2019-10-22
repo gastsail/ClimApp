@@ -1,33 +1,34 @@
 package com.climapp.ui
 
 import android.Manifest
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
-import com.climapp.R
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
-import androidx.core.app.ActivityCompat
 import android.content.pm.PackageManager
+import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
-import kotlinx.android.synthetic.main.activity_main.*
-import com.dezlum.codelabs.getjson.GetJson
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
+import com.climapp.R
 import com.climapp.model.Clima
+import com.climapp.ui.adapter.DailyWeatherListAdapter
+import com.climapp.utils.ClimappUtils
+import com.dezlum.codelabs.getjson.GetJson
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
+import kotlinx.android.synthetic.main.activity_main.*
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.util.*
-
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private var latitud: Double = -31.43294
     private var longitud: Double = -64.2768856
-    var apiUrl = "https://api.darksky.net/forecast/6f7e254206a8285a9e7b0506af425ef9/$latitud,$longitud?lang=es"
-
+    var apiUrl = "https://api.darksky.net/forecast/6f7e254206a8285a9e7b0506af425ef9/$latitud,$longitud?lang=es&units=si"
 
     companion object {
         private const val locationRequestCode = 1000
@@ -36,10 +37,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+    }
+
+    override fun onStart() {
+        super.onStart()
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         checkForPermission()
-
     }
 
     fun checkForPermission(){
@@ -73,35 +77,61 @@ class MainActivity : AppCompatActivity() {
 
                 val currentObj = GetJson().AsJSONObject(apiUrl).get("currently")
                 val mainDataObj = GetJson().AsJSONObject(apiUrl)
-                val dayObj = mainDataObj.getAsJsonObject("daily").getAsJsonArray("data").get(0)
+                val dailyArray = mainDataObj.getAsJsonObject("daily").getAsJsonArray("data")
+                val dayObj = dailyArray.get(0)
 
                 val gson = Gson()
                 val datosClima = gson.fromJson(currentObj,Clima::class.java)
                 val dayClima = gson.fromJson(dayObj,Clima::class.java)
                 val datosGenerales = gson.fromJson(mainDataObj,Clima::class.java)
-                val temperaturaEnGrados = (datosClima.temperature - 32) * 5/9
+
+                val datosPronosticoExtendido = ArrayList<Clima>()
+
+                for (index in (1..5)) {
+                    val itemJsonObj = dailyArray.get(index).asJsonObject
+                    val itemKotlinObj = gson.fromJson(itemJsonObj, Clima::class.java)
+                    Log.d("A", "min: ${itemKotlinObj.temperatureLow}, max: ${itemKotlinObj.temperatureHigh}")
+
+                    val dailyWeatherObj = Clima()
+
+                    dailyWeatherObj.time = itemKotlinObj.time
+                    dailyWeatherObj.icon = itemKotlinObj.icon
+                    dailyWeatherObj.temperatureLow = itemKotlinObj.temperatureLow
+                    dailyWeatherObj.temperatureHigh  = itemKotlinObj.temperatureHigh
+
+                    datosPronosticoExtendido.add(dailyWeatherObj)
+                }
 
                 val date = SimpleDateFormat("dd/MM/yyyy").format(Date(dayClima.time*1000))
 
-                tvCurrentDayName.text = getDayOfWeek(date)
-                tvCurrentCity.text = datosGenerales.timezone
-                tvCurrentWeatherTemperature.text = roundToDecimals(temperaturaEnGrados,2).toString()+" ºC"
+                tvCurrentDayName.text = ClimappUtils.getDayOfWeek(date)
+                tvCurrentCity.text = getCity(datosGenerales.timezone);
+                tvCurrentWeatherTemperature.text = "${ClimappUtils.getRounded(datosClima.temperature)} ºC"
+                Glide.with(this).load("${ClimappUtils.imagesUrl}${datosClima.icon}.png").centerCrop().into(imgViewCurrentWeatherIcon)
+                tvMaxAndMin.text = "max: ${ClimappUtils.getRounded(dayClima.temperatureHigh)} ºC  min: ${ClimappUtils.getRounded(dayClima.temperatureLow)} ºC"
                 tvCurrentWeatherSummary.text = datosClima.summary
-                tvMaxAndMin.text = "max: ${(roundToDecimals((dayClima.temperatureHigh - 32) * 5/9,2))} ºC  min: ${(roundToDecimals((dayClima.temperatureLow - 32) * 5/9,2))} ºC"
+
+                fillRecyclerViewExtendedForecast(datosPronosticoExtendido)
 
                 progressBar.visibility = View.GONE
                 relativeClima.visibility = View.VISIBLE
                 relativeRecycler.visibility = View.VISIBLE
                 tvDatosClima.visibility = View.GONE
-
             }
         }
     }
 
-    fun getDayOfWeek(date: String): String {
-        val locale = Locale("es", "ES")
-        return LocalDate.parse(date, DateTimeFormatter.ofPattern("dd/MM/yyyy")).getDayOfWeek().getDisplayName(
-            TextStyle.FULL,locale)
+    fun fillRecyclerViewExtendedForecast(datosPronosticoExtendido: List<Clima>) {
+        rvExtendedForecast.setHasFixedSize(true)
+        rvExtendedForecast.layoutManager = LinearLayoutManager(this)
+
+        val mListAdapter = DailyWeatherListAdapter(this, datosPronosticoExtendido)
+        rvExtendedForecast.adapter = mListAdapter
+    }
+
+    fun getCity(timezone: String): String {
+        val timezoneList = timezone.split("/")
+        return timezoneList[timezoneList.size - 1]
     }
 
     fun roundToDecimals(number: Double, numDecimalPlaces: Int): Double {
