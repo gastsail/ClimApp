@@ -145,9 +145,14 @@ class MainActivity : AppCompatActivity() {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
                 val addresses = geoCoder.getFromLocationName(query,5)
-                val latitud = addresses[0].latitude
-                val longitud = addresses[0].longitude
-                updateWeather(latitud,longitud)
+                if(addresses.size > 0){
+                    val latitud = addresses[0].latitude
+                    val longitud = addresses[0].longitude
+                    updateWeather(latitud,longitud)
+                }else{
+                    Toast.makeText(this@MainActivity,"No se encontro la ciudad solicitada",Toast.LENGTH_SHORT).show()
+                }
+
                 return false
             }
 
