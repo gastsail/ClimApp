@@ -1,10 +1,16 @@
 package com.climapp.ui
 
 import android.Manifest
+import android.app.SearchManager
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
 import android.view.View
+import android.widget.BaseAdapter
+import android.widget.SearchView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -26,9 +32,7 @@ import kotlin.collections.ArrayList
 class MainActivity : AppCompatActivity() {
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private var latitud: Double = -31.43294
-    private var longitud: Double = -64.2768856
-    var apiUrl = "https://api.darksky.net/forecast/6f7e254206a8285a9e7b0506af425ef9/$latitud,$longitud?lang=es&units=si"
+    private val geoCoder:Geocoder by lazy { Geocoder(this) }
 
     companion object {
         private const val locationRequestCode = 1000
@@ -37,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
     }
 
     override fun onStart() {
@@ -72,53 +77,87 @@ class MainActivity : AppCompatActivity() {
     fun getLatitudLongitud() {
         fusedLocationProviderClient.lastLocation.addOnSuccessListener(this) { location ->
             if (location != null) {
-                latitud = location.latitude
-                longitud = location.longitude
-
-                val currentObj = GetJson().AsJSONObject(apiUrl).get("currently")
-                val mainDataObj = GetJson().AsJSONObject(apiUrl)
-                val dailyArray = mainDataObj.getAsJsonObject("daily").getAsJsonArray("data")
-                val dayObj = dailyArray.get(0)
-
-                val gson = Gson()
-                val datosClima = gson.fromJson(currentObj,Clima::class.java)
-                val dayClima = gson.fromJson(dayObj,Clima::class.java)
-                val datosGenerales = gson.fromJson(mainDataObj,Clima::class.java)
-
-                val datosPronosticoExtendido = ArrayList<Clima>()
-
-                for (index in (1..5)) {
-                    val itemJsonObj = dailyArray.get(index).asJsonObject
-                    val itemKotlinObj = gson.fromJson(itemJsonObj, Clima::class.java)
-                    Log.d("A", "min: ${itemKotlinObj.temperatureLow}, max: ${itemKotlinObj.temperatureHigh}")
-
-                    val dailyWeatherObj = Clima()
-
-                    dailyWeatherObj.time = itemKotlinObj.time
-                    dailyWeatherObj.icon = itemKotlinObj.icon
-                    dailyWeatherObj.temperatureLow = itemKotlinObj.temperatureLow
-                    dailyWeatherObj.temperatureHigh  = itemKotlinObj.temperatureHigh
-
-                    datosPronosticoExtendido.add(dailyWeatherObj)
-                }
-
-                val date = SimpleDateFormat("dd/MM/yyyy").format(Date(dayClima.time*1000))
-
-                tvCurrentDayName.text = ClimappUtils.getDayOfWeek(date)
-                tvCurrentCity.text = getCity(datosGenerales.timezone);
-                tvCurrentWeatherTemperature.text = "${ClimappUtils.getRounded(datosClima.temperature)} ºC"
-                Glide.with(this).load("${ClimappUtils.imagesUrl}${datosClima.icon}.png").centerCrop().into(imgViewCurrentWeatherIcon)
-                tvMaxAndMin.text = "max: ${ClimappUtils.getRounded(dayClima.temperatureHigh)} ºC  min: ${ClimappUtils.getRounded(dayClima.temperatureLow)} ºC"
-                tvCurrentWeatherSummary.text = datosClima.summary
-
-                fillRecyclerViewExtendedForecast(datosPronosticoExtendido)
-
-                progressBar.visibility = View.GONE
-                relativeClima.visibility = View.VISIBLE
-                relativeRecycler.visibility = View.VISIBLE
-                tvDatosClima.visibility = View.GONE
+                val latitud = location.latitude
+                val longitud = location.longitude
+                updateWeather(latitud,longitud)
             }
         }
+    }
+
+    private fun updateWeather(latitud:Double,longitud:Double) {
+        var apiUrl = "https://api.darksky.net/forecast/6f7e254206a8285a9e7b0506af425ef9/$latitud,$longitud?lang=es&units=si"
+        val currentObj = GetJson().AsJSONObject(apiUrl).get("currently")
+        val mainDataObj = GetJson().AsJSONObject(apiUrl)
+        val dailyArray = mainDataObj.getAsJsonObject("daily").getAsJsonArray("data")
+        val dayObj = dailyArray.get(0)
+
+        val gson = Gson()
+        val datosClima = gson.fromJson(currentObj, Clima::class.java)
+        val dayClima = gson.fromJson(dayObj, Clima::class.java)
+        val datosGenerales = gson.fromJson(mainDataObj, Clima::class.java)
+
+        val datosPronosticoExtendido = ArrayList<Clima>()
+
+        for (index in (1..5)) {
+            val itemJsonObj = dailyArray.get(index).asJsonObject
+            val itemKotlinObj = gson.fromJson(itemJsonObj, Clima::class.java)
+            Log.d(
+                "A",
+                "min: ${itemKotlinObj.temperatureLow}, max: ${itemKotlinObj.temperatureHigh}"
+            )
+
+            val dailyWeatherObj = Clima()
+
+            dailyWeatherObj.time = itemKotlinObj.time
+            dailyWeatherObj.icon = itemKotlinObj.icon
+            dailyWeatherObj.temperatureLow = itemKotlinObj.temperatureLow
+            dailyWeatherObj.temperatureHigh = itemKotlinObj.temperatureHigh
+
+            datosPronosticoExtendido.add(dailyWeatherObj)
+        }
+
+        val date = SimpleDateFormat("dd/MM/yyyy").format(Date(dayClima.time * 1000))
+
+        tvCurrentDayName.text = ClimappUtils.getDayOfWeek(date)
+        tvCurrentCity.text = getCity(datosGenerales.timezone);
+        tvCurrentWeatherTemperature.text = "${ClimappUtils.getRounded(datosClima.temperature)} ºC"
+        Glide.with(this).load("${ClimappUtils.imagesUrl}${datosClima.icon}.png").centerCrop()
+            .into(imgViewCurrentWeatherIcon)
+        tvMaxAndMin.text =
+            "max: ${ClimappUtils.getRounded(dayClima.temperatureHigh)} ºC  min: ${ClimappUtils.getRounded(
+                dayClima.temperatureLow
+            )} ºC"
+        tvCurrentWeatherSummary.text = datosClima.summary
+
+        fillRecyclerViewExtendedForecast(datosPronosticoExtendido)
+
+        progressBar.visibility = View.GONE
+        relativeClima.visibility = View.VISIBLE
+        relativeRecycler.visibility = View.VISIBLE
+        tvDatosClima.visibility = View.GONE
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+
+        menuInflater.inflate(R.menu.menu,menu)
+        val searchView= menu?.findItem(R.id.action_search)?.actionView as SearchView
+        searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
+
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                val addresses = geoCoder.getFromLocationName(query,5)
+                val latitud = addresses[0].latitude
+                val longitud = addresses[0].longitude
+                updateWeather(latitud,longitud)
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                return false
+            }
+        })
+
+        return super.onCreateOptionsMenu(menu)
+
     }
 
     fun fillRecyclerViewExtendedForecast(datosPronosticoExtendido: List<Clima>) {
