@@ -79,12 +79,12 @@ class MainActivity : AppCompatActivity() {
             if (location != null) {
                 val latitud = location.latitude
                 val longitud = location.longitude
-                updateWeather(latitud,longitud)
+                updateWeather(latitud,longitud,false)
             }
         }
     }
 
-    private fun updateWeather(latitud:Double,longitud:Double) {
+    private fun updateWeather(latitud:Double,longitud:Double,isCitySearchView: Boolean) {
         var apiUrl = "https://api.darksky.net/forecast/6f7e254206a8285a9e7b0506af425ef9/$latitud,$longitud?lang=es&units=si"
         val currentObj = GetJson().AsJSONObject(apiUrl).get("currently")
         val mainDataObj = GetJson().AsJSONObject(apiUrl)
@@ -135,6 +135,11 @@ class MainActivity : AppCompatActivity() {
         relativeClima.visibility = View.VISIBLE
         relativeRecycler.visibility = View.VISIBLE
         tvDatosClima.visibility = View.GONE
+
+        if(isCitySearchView){
+            tvHumedadProbLluvia.visibility = View.VISIBLE
+            tvHumedadProbLluvia.text = "humedad: ${ClimappUtils.getRounded(dayClima.humidity)*100}% prob. lluvia: ${ClimappUtils.getRounded(dayClima.precipProbability)}%"
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -148,7 +153,7 @@ class MainActivity : AppCompatActivity() {
                 if(addresses.size > 0){
                     val latitud = addresses[0].latitude
                     val longitud = addresses[0].longitude
-                    updateWeather(latitud,longitud)
+                    updateWeather(latitud,longitud,true)
                 }else{
                     Toast.makeText(this@MainActivity,"No se encontro la ciudad solicitada",Toast.LENGTH_SHORT).show()
                 }
@@ -176,11 +181,6 @@ class MainActivity : AppCompatActivity() {
     fun getCity(timezone: String): String {
         val timezoneList = timezone.split("/")
         return timezoneList[timezoneList.size - 1]
-    }
-
-    fun roundToDecimals(number: Double, numDecimalPlaces: Int): Double {
-        val factor = Math.pow(10.0, numDecimalPlaces.toDouble())
-        return Math.round(number * factor) / factor
     }
 
     override fun onRequestPermissionsResult(
