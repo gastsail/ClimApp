@@ -1,15 +1,12 @@
 package com.climapp.ui
 
 import android.Manifest
-import android.app.SearchManager
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.View
-import android.widget.BaseAdapter
 import android.widget.SearchView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -28,11 +25,20 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
+import android.app.SearchManager
+import android.content.Context
+import android.database.MatrixCursor
+import android.location.Address
+import android.provider.BaseColumns
+import android.widget.CursorAdapter
+import android.widget.SimpleCursorAdapter
+
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private val geoCoder:Geocoder by lazy { Geocoder(this) }
+    private val geoCoder: Geocoder by lazy { Geocoder(this) }
+    private var suggestionList = mutableListOf<List<Address>>()
 
     companion object {
         private const val locationRequestCode = 1000
@@ -41,17 +47,15 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
     }
 
     override fun onStart() {
         super.onStart()
-
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         checkForPermission()
     }
 
-    fun checkForPermission(){
+    fun checkForPermission() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -79,13 +83,14 @@ class MainActivity : AppCompatActivity() {
             if (location != null) {
                 val latitud = location.latitude
                 val longitud = location.longitude
-                updateWeather(latitud,longitud,false)
+                updateWeather(latitud, longitud, false)
             }
         }
     }
 
-    private fun updateWeather(latitud:Double,longitud:Double,isCitySearchView: Boolean) {
-        var apiUrl = "https://api.darksky.net/forecast/6f7e254206a8285a9e7b0506af425ef9/$latitud,$longitud?lang=es&units=si"
+    private fun updateWeather(latitud: Double, longitud: Double, isCitySearchView: Boolean) {
+        var apiUrl =
+            "https://api.darksky.net/forecast/6f7e254206a8285a9e7b0506af425ef9/$latitud,$longitud?lang=es&units=si"
         val currentObj = GetJson().AsJSONObject(apiUrl).get("currently")
         val mainDataObj = GetJson().AsJSONObject(apiUrl)
         val dailyArray = mainDataObj.getAsJsonObject("daily").getAsJsonArray("data")
@@ -136,32 +141,79 @@ class MainActivity : AppCompatActivity() {
         relativeRecycler.visibility = View.VISIBLE
         tvDatosClima.visibility = View.GONE
 
-        if(isCitySearchView){
+        if (isCitySearchView) {
             tvHumedadProbLluvia.visibility = View.VISIBLE
-            tvHumedadProbLluvia.text = "humedad: ${ClimappUtils.getRounded(dayClima.humidity)*100}% prob. lluvia: ${ClimappUtils.getRounded(dayClima.precipProbability)}%"
+            tvHumedadProbLluvia.text =
+                "humedad: ${ClimappUtils.getRounded(dayClima.humidity) * 100}% prob. lluvia: ${ClimappUtils.getRounded(
+                    dayClima.precipProbability
+                )}%"
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
-        menuInflater.inflate(R.menu.menu,menu)
-        val searchView= menu?.findItem(R.id.action_search)?.actionView as SearchView
-        searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
+        menuInflater.inflate(R.menu.menu, menu)
+        val searchView = menu?.findItem(R.id.action_search)?.actionView as SearchView
+        searchView.queryHint = "Escriba la ciudad a buscar"
+        val columNames = arrayOf(SearchManager.SUGGEST_COLUMN_TEXT_1)
+        val viewIds = intArrayOf(android.R.id.text1)
+        val adapter: CursorAdapter = SimpleCursorAdapter(
+            this,
+            android.R.layout.simple_list_item_1, null, columNames, viewIds)
+         searchView.suggestionsAdapter = adapter
+
+
+        searchView.setOnSuggestionListener(object : SearchView.OnSuggestionListener {
+            override fun onSuggestionSelect(position: Int): Boolean {
+                return false
+            }
+
+            override fun onSuggestionClick(position: Int): Boolean {
+                val countryName = suggestionList[position][position].countryName
+                searchView.setQuery(countryName, true)
+                searchView.clearFocus()
+                return true
+            }
+        })
+
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
-                val addresses = geoCoder.getFromLocationName(query,5)
-                if(addresses.size > 0){
+
+                val addresses = geoCoder.getFromLocationName(query, 5)
+                if (addresses.size > 0) {
+                    suggestionList.add(addresses)
                     val latitud = addresses[0].latitude
                     val longitud = addresses[0].longitude
-                    updateWeather(latitud,longitud,true)
-                }else{
-                    Toast.makeText(this@MainActivity,"No se encontro la ciudad solicitada",Toast.LENGTH_SHORT).show()
+                    updateWeather(latitud, longitud, true)
+                } else {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "No se encontro la ciudad solicitada",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
+
+
+                val columns = arrayOf(
+                    BaseColumns._ID,
+                    SearchManager.SUGGEST_COLUMN_TEXT_1,
+                    SearchManager.SUGGEST_COLUMN_INTENT_DATA
+                )
+                val matrixCursor = MatrixCursor(columns)
+                for ((index, value) in suggestionList.withIndex()) {
+                    val tmp = arrayOf(index, value, value)
+                    matrixCursor.addRow(tmp)
+                }
+                adapter.swapCursor(matrixCursor)
+                adapter.notifyDataSetChanged()
 
                 return false
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
+
                 return false
             }
         })
@@ -173,7 +225,6 @@ class MainActivity : AppCompatActivity() {
     fun fillRecyclerViewExtendedForecast(datosPronosticoExtendido: List<Clima>) {
         rvExtendedForecast.setHasFixedSize(true)
         rvExtendedForecast.layoutManager = LinearLayoutManager(this)
-
         val mListAdapter = DailyWeatherListAdapter(this, datosPronosticoExtendido)
         rvExtendedForecast.adapter = mListAdapter
     }
