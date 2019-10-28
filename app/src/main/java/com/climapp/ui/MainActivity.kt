@@ -6,6 +6,7 @@ import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.SearchView
 import android.widget.Toast
@@ -151,9 +152,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-
         menuInflater.inflate(R.menu.menu, menu)
-        val searchView = menu?.findItem(R.id.action_search)?.actionView as SearchView
+
+        val searchView = menu?.findItem(R.id.action_search_city_weather)?.actionView as SearchView
         searchView.queryHint = "Escriba la ciudad a buscar"
         val columNames = arrayOf(SearchManager.SUGGEST_COLUMN_TEXT_1)
         val viewIds = intArrayOf(android.R.id.text1)
@@ -219,7 +220,16 @@ class MainActivity : AppCompatActivity() {
         })
 
         return super.onCreateOptionsMenu(menu)
+    }
 
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        when (item?.itemId) {
+            R.id.action_weather_current_city -> {
+                getLatitudLongitud()
+            }
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     fun fillRecyclerViewExtendedForecast(datosPronosticoExtendido: List<Clima>) {

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ClimApp</string>
+    <string name="weather_current_city">Clima en Mi Ubicacion</string>
+    <string name="search_city_weather">Buscar clima en otra ciudad</string>
 </resources>
